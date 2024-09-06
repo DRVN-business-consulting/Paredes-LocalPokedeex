@@ -15,7 +15,7 @@ export default function App() {
 
   const handleLogin = () => {
     if (username === validUsername && password === validPassword) {
-      // Navigate to the (tabs) screen on successful login
+   
       router.push('/(tabs)');
     } else {
       setError('Incorrect username or password');
@@ -26,7 +26,6 @@ export default function App() {
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
       
-      {/* Input for Username */}
       <TextInput
         style={styles.input}
         placeholder="Username"
@@ -34,7 +33,6 @@ export default function App() {
         onChangeText={setUsername}
       />
       
-      {/* Input for Password */}
       <TextInput
         style={styles.input}
         placeholder="Password"
@@ -43,10 +41,10 @@ export default function App() {
         onChangeText={setPassword}
       />
       
-      {/* Error Message */}
+
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      {/* Login Button */}
+ 
       <Button title="Login" onPress={handleLogin} />
 
       <StatusBar style="auto" />
