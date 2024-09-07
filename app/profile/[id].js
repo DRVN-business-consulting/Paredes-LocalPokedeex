@@ -49,7 +49,7 @@ export default function ProfileScreen() {
     const fetchPokemonDetails = async () => {
       try {
         const response = await axios.get(`http://192.168.100.6:8000/pokemon/${id}`);
-        console.log('API Response:', response.data);
+        
 
         if (Array.isArray(response.data) && response.data.length > 0) {
           setPokemon(response.data[0]);
