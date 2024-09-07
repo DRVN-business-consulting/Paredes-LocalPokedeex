@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Image, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useRoute } from '@react-navigation/native';
@@ -23,7 +23,7 @@ const typeColors = {
   Dragon: '#7038F8',
   Dark: '#705848',
   Steel: '#B8B8D0',
-  None: '#FFFFFF', // Fallback color
+  None: '#FFFFFF', 
 };
 
 export default function ProfileScreen() {
@@ -32,6 +32,7 @@ export default function ProfileScreen() {
   const [pokemon, setPokemon] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showPrimary, setShowPrimary] = useState(true); // State to toggle between primary and secondary type
 
   const route = useRoute(); 
   const { id } = route.params || {};
@@ -69,13 +70,22 @@ export default function ProfileScreen() {
     return <Text style={[styles.error, isDarkMode && styles.darkError]}>Pokémon not found</Text>;
   }
 
-  // Determine card background color based on the Pokémon's primary type
-  const cardColor = typeColors[pokemon.type[0]] || typeColors.None;
+  // Determine the type colors for primary and secondary (if exists)
+  const primaryType = pokemon.type[0]; // Get primary type name
+  const primaryTypeColor = typeColors[primaryType] || typeColors.None;
+  
+  const secondaryType = pokemon.type[1] ? pokemon.type[1] : null; // Get secondary type name (if exists)
+  const secondaryTypeColor = secondaryType ? typeColors[secondaryType] : typeColors.None;
+
+  // Determine the card background color based on the user's choice (primary or secondary type)
+  const cardColor = showPrimary ? primaryTypeColor : secondaryTypeColor || primaryTypeColor;
+
+  // Determine the button color, it should be the opposite type's color
+  const buttonColor = showPrimary ? secondaryTypeColor : primaryTypeColor;
 
   return (
     <ScrollView contentContainerStyle={[styles.container, isDarkMode && styles.darkContainer]}>
       <View style={[styles.card, isDarkMode && styles.darkCard, { backgroundColor: cardColor }]}>
-
         <Text style={[styles.pokemonId, isDarkMode && styles.darkPokemonId]}>Pokémon #{pokemon.id}</Text>
         
         <Image
@@ -83,10 +93,17 @@ export default function ProfileScreen() {
           style={styles.image}
         />
         <Text style={[styles.name, isDarkMode && styles.darkName]}>{pokemon.name.english}</Text>
+
+        {/* Toggle between primary and secondary type */}
+        {secondaryType && (
+          <TouchableOpacity style={[styles.toggleButton, { backgroundColor: buttonColor }]} onPress={() => setShowPrimary(!showPrimary)}>
+            <Text style={styles.toggleButtonText}>
+              {showPrimary ? `Primary Type: ${primaryType}` : `Secondary Type: ${secondaryType}`}
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <Text style={[styles.description, isDarkMode && styles.darkDescription]}>{pokemon.description}</Text>
-        <Text style={[styles.text, isDarkMode && styles.darkText]}>
-          <Text style={styles.bold}>Type:</Text> {pokemon.type.join(', ')}
-        </Text>
         <Text style={[styles.text, isDarkMode && styles.darkText]}>
           <Text style={styles.bold}>Species:</Text> {pokemon.species}
         </Text>
@@ -118,8 +135,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 16,
     margin: 16,
-    elevation: 5, // for Android shadow
-    shadowColor: '#000', // for iOS shadow
+    elevation: 5, // for shadow android
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -182,5 +198,15 @@ const styles = StyleSheet.create({
   },
   darkError: {
     color: '#f88',
+  },
+  toggleButton: {
+    marginVertical: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 5,
+  },
+  toggleButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });

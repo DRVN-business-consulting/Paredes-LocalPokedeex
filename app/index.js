@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, StyleSheet, TextInput, Button } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ImageBackground } from 'react-native';
 import { useRouter } from 'expo-router';
+
+import PikachuImage from '../assets/image.png'; 
 
 export default function App() {
   const router = useRouter();
@@ -15,7 +17,6 @@ export default function App() {
 
   const handleLogin = () => {
     if (username === validUsername && password === validPassword) {
-   
       router.push('/(tabs)');
     } else {
       setError('Incorrect username or password');
@@ -23,55 +24,92 @@ export default function App() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-      
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
-      />
-      
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      
+    <ImageBackground
+      source={PikachuImage} // refer to the import local image
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      <View style={styles.container}>
+        <Text style={styles.title}>Pokémon Login</Text>
+        
+        <TextInput
+          style={styles.input}
+          placeholder="Trainer Name"
+          value={username}
+          onChangeText={setUsername}
+          placeholderTextColor="#fff"
+        />
+        
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          placeholderTextColor="#fff"
+        />
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
 
- 
-      <Button title="Login" onPress={handleLogin} />
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+          <Text style={styles.buttonText}>Login</Text>
+        </TouchableOpacity>
 
-      <StatusBar style="auto" />
-    </View>
+        <StatusBar style="light" />
+      </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  backgroundImage: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
+  },
+  container: {
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    padding: 20,
+    borderRadius: 20,
+    alignItems: 'center',
+    width: '80%',
   },
   title: {
-    fontSize: 24,
-    marginBottom: 16,
-    textAlign: 'center',
+    fontSize: 32,
+    color: '#FFCC00', 
+    fontWeight: 'bold',
+    marginBottom: 24,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 2,
   },
   input: {
     width: '100%',
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
+    height: 50,
+    borderColor: '#FFCC00',
+    borderWidth: 2,
+    borderRadius: 10,
+    paddingHorizontal: 16,
     marginBottom: 16,
-    paddingHorizontal: 8,
+    fontSize: 18,
+    color: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  button: {
+    backgroundColor: '#FFCC00', // Pokémon yellow
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 16,
+    width: '100%',
+  },
+  buttonText: {
+    color: '#000', // Black text for contrast
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   error: {
     color: 'red',
