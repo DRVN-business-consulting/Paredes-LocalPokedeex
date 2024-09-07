@@ -2,44 +2,41 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 import { useTheme } from '../../src/theme/ThemeContext';
-import { useFavorites } from '../../src/theme/FavoritesContext'; 
+import { useFavorites } from '../../src/theme/FavoritesContext';
 import { useRouter } from 'expo-router';
 
 export default function GroupList() {
   const router = useRouter();
   const { theme } = useTheme();
-  const { favorites, addFavorite, removeFavorite } = useFavorites(); 
+  const { favorites, addFavorite, removeFavorite } = useFavorites();
   const isDarkMode = theme === 'dark';
   const [pokemonData, setPokemonData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const POKEMON_LIMIT_PER_TYPE = 5; // bayluhi ang number nga ni kung pila gusto mo makita nga pokemon
+  const POKEMON_LIMIT_PER_TYPE = 5;
 
   useEffect(() => {
     const fetchPokemonData = async () => {
       try {
-        const response = await axios.get('http://192.168.100.6:8000/pokemon?limit=10');
+        const response = await axios.get('http://192.168.100.6:8000/pokemon?limit=50');
         const pokemonList = response.data;
 
         const detailedPokemonPromises = pokemonList.map(async (pokemon) => ({
           id: pokemon.id,
           name: pokemon.name.english,
           image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.id}.png`,
-          primaryType: pokemon.type[0], // Use the first type as primary type
+          primaryType: pokemon.type[0],
           isFavorite: favorites.some(fav => fav.id === pokemon.id),
         }));
 
         const detailedPokemon = await Promise.all(detailedPokemonPromises);
 
-        const groupedByType = detailedPokemon.reduce((acc, pokemon) => {
-          const { primaryType } = pokemon;
-          if (!acc[primaryType]) {
-            acc[primaryType] = [];
-          }
-          // Ensure no duplicates are added to the group
-          if (!acc[primaryType].find(p => p.id === pokemon.id)) {
-            acc[primaryType].push(pokemon);
-          }
+        // Gather all unique Pokémon types
+        const allTypes = [...new Set(detailedPokemon.map(p => p.primaryType))];
+
+        // Group Pokémon by type
+        const groupedByType = allTypes.reduce((acc, type) => {
+          acc[type] = detailedPokemon.filter(pokemon => pokemon.primaryType === type);
           return acc;
         }, {});
 
@@ -52,18 +49,18 @@ export default function GroupList() {
     };
 
     fetchPokemonData();
-  }, [favorites]); 
+  }, [favorites]);
 
   const handleNavigateToDetails = (pokemonId) => {
-    router.push(`/profile/${pokemonId}`); 
+    router.push(`/profile/${pokemonId}`);
   };
 
   const handleAddToFavorites = (pokemon) => {
-    addFavorite(pokemon); 
+    addFavorite(pokemon);
   };
 
   const handleRemoveFromFavorites = (pokemon) => {
-    removeFavorite(pokemon); 
+    removeFavorite(pokemon);
   };
 
   if (loading) {
@@ -85,7 +82,7 @@ export default function GroupList() {
               {item.charAt(0).toUpperCase() + item.slice(1)}
             </Text>
             <FlatList
-              data={pokemonData[item].slice(0, POKEMON_LIMIT_PER_TYPE)} // Limit Pokémon per type
+              data={pokemonData[item].slice(0, POKEMON_LIMIT_PER_TYPE)}
               keyExtractor={(pokemon) => pokemon.id.toString()}
               renderItem={({ item }) => (
                 <View style={styles.itemContainer}>

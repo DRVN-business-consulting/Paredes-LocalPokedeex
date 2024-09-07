@@ -1,7 +1,7 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import { ThemeProvider } from '../src/theme/ThemeContext';
-import { FavoritesProvider } from '../src/theme/FavoritesContext'; // Import FavoritesProvider
+import { FavoritesProvider } from '../src/theme/FavoritesContext';
 
 export default function AppLayout() {
   return (

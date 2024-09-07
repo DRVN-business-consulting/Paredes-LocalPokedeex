@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOp
 import axios from 'axios';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useRouter } from 'expo-router';
-import { useFavorites } from '../../src/theme/FavoritesContext'; 
+import { useFavorites } from '../../src/theme/FavoritesContext';
 
-export default function PokemonScreen() {
+export default function Index() {
   const router = useRouter();
   const { theme } = useTheme();
   const { favorites, addFavorite } = useFavorites(); 
@@ -30,6 +30,7 @@ export default function PokemonScreen() {
         const detailedPokemon = await Promise.all(detailedPokemonPromises);
         setPokemonData(detailedPokemon);
       } catch (err) {
+        console.error('Error fetching Pokémon data:', err); 
         setError('Failed to load Pokémon data');
       } finally {
         setLoading(false);
@@ -94,7 +95,7 @@ const styles = StyleSheet.create({
   },
   itemContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between', // Ensure spacing between Pokémon info and Favorite button
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
