@@ -2,38 +2,44 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 import { useTheme } from '../../src/theme/ThemeContext';
+import { useFavorites } from '../../src/theme/FavoritesContext'; 
 import { useRouter } from 'expo-router';
 
 export default function GroupList() {
   const router = useRouter();
+  const { theme } = useTheme();
+  const { favorites, addFavorite, removeFavorite } = useFavorites(); 
+  const isDarkMode = theme === 'dark';
   const [pokemonData, setPokemonData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { theme } = useTheme();
-  const isDarkMode = theme === 'dark';
+  const POKEMON_LIMIT_PER_TYPE = 5; // bayluhi ang number nga ni kung pila gusto mo makita nga pokemon
 
   useEffect(() => {
     const fetchPokemonData = async () => {
       try {
-        const response = await axios.get('http://192.168.100.6:8000/pokemon?limit=100'); // Fetch Pokémon data from local server
+        const response = await axios.get('http://192.168.100.6:8000/pokemon?limit=10');
         const pokemonList = response.data;
 
         const detailedPokemonPromises = pokemonList.map(async (pokemon) => ({
           id: pokemon.id,
           name: pokemon.name.english,
           image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.id}.png`,
-          types: pokemon.type,
+          primaryType: pokemon.type[0], // Use the first type as primary type
+          isFavorite: favorites.some(fav => fav.id === pokemon.id),
         }));
 
         const detailedPokemon = await Promise.all(detailedPokemonPromises);
 
         const groupedByType = detailedPokemon.reduce((acc, pokemon) => {
-          pokemon.types.forEach(type => {
-            if (!acc[type]) {
-              acc[type] = [];
-            }
-            acc[type].push(pokemon);
-          });
+          const { primaryType } = pokemon;
+          if (!acc[primaryType]) {
+            acc[primaryType] = [];
+          }
+          // Ensure no duplicates are added to the group
+          if (!acc[primaryType].find(p => p.id === pokemon.id)) {
+            acc[primaryType].push(pokemon);
+          }
           return acc;
         }, {});
 
@@ -46,10 +52,18 @@ export default function GroupList() {
     };
 
     fetchPokemonData();
-  }, []);
+  }, [favorites]); 
 
   const handleNavigateToDetails = (pokemonId) => {
-    router.push(`/profile/${pokemonId}`); // Navigate to Pokémon details
+    router.push(`/profile/${pokemonId}`); 
+  };
+
+  const handleAddToFavorites = (pokemon) => {
+    addFavorite(pokemon); 
+  };
+
+  const handleRemoveFromFavorites = (pokemon) => {
+    removeFavorite(pokemon); 
   };
 
   if (loading) {
@@ -71,16 +85,26 @@ export default function GroupList() {
               {item.charAt(0).toUpperCase() + item.slice(1)}
             </Text>
             <FlatList
-              data={pokemonData[item]}
+              data={pokemonData[item].slice(0, POKEMON_LIMIT_PER_TYPE)} // Limit Pokémon per type
               keyExtractor={(pokemon) => pokemon.id.toString()}
               renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[styles.item, isDarkMode && styles.darkItem]}
-                  onPress={() => handleNavigateToDetails(item.id)}
-                >
-                  <Image source={{ uri: item.image }} style={styles.image} />
-                  <Text style={[styles.itemText, isDarkMode && styles.darkItemText]}>{item.name}</Text>
-                </TouchableOpacity>
+                <View style={styles.itemContainer}>
+                  <TouchableOpacity
+                    style={[styles.item, isDarkMode && styles.darkItem]}
+                    onPress={() => handleNavigateToDetails(item.id)}
+                  >
+                    <Image source={{ uri: item.image }} style={styles.image} />
+                    <Text style={[styles.itemText, isDarkMode && styles.darkItemText]}>{item.name} #{item.id}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => item.isFavorite ? handleRemoveFromFavorites(item) : handleAddToFavorites(item)}
+                  >
+                    <Text style={[styles.favoriteButton, item.isFavorite && styles.favoriteButtonAdded]}>
+                      {item.isFavorite ? 'Added to Favorites' : 'Add to Favorites'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               )}
             />
           </View>
@@ -100,37 +124,54 @@ const styles = StyleSheet.create({
     backgroundColor: '#333',
   },
   group: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   groupTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#000',
+    marginBottom: 10,
   },
   darkGroupTitle: {
     color: '#fff',
   },
+  itemContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  darkItemContainer: {
+    borderBottomColor: '#555',
+  },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    flex: 1,
   },
   darkItem: {
     borderBottomColor: '#555',
   },
   image: {
-    width: 50,
-    height: 50,
+    width: 100,
+    height: 100,
+    resizeMode: 'contain',
     marginRight: 10,
   },
   itemText: {
+    fontSize: 16,
     color: '#000',
   },
   darkItemText: {
     color: '#fff',
+  },
+  favoriteButton: {
+    color: '#007BFF',
+    padding: 10,
+  },
+  favoriteButtonAdded: {
+    color: '#28a745',
   },
   loader: {
     flex: 1,

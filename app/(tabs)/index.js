@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOp
 import axios from 'axios';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useRouter } from 'expo-router';
+import { useFavorites } from '../../src/theme/FavoritesContext'; 
 
 export default function PokemonScreen() {
   const router = useRouter();
   const { theme } = useTheme();
+  const { favorites, addFavorite } = useFavorites(); 
   const isDarkMode = theme === 'dark';
   const [pokemonData, setPokemonData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +24,7 @@ export default function PokemonScreen() {
           id: pokemon.id,
           name: pokemon.name.english,
           image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.id}.png`,
+          isFavorite: favorites.some(fav => fav.id === pokemon.id), 
         }));
 
         const detailedPokemon = await Promise.all(detailedPokemonPromises);
@@ -34,10 +37,14 @@ export default function PokemonScreen() {
     };
 
     fetchPokemonData();
-  }, []);
+  }, [favorites]); // Add favorites to dependencies to update when favorites change
 
   const handleNavigateToDetails = (pokemonId) => {
-    router.push(`/profile/${pokemonId}`); // Navigate to Pokémon details
+    router.push(`/profile/${pokemonId}`); 
+  };
+
+  const handleAddToFavorites = (pokemon) => {
+    addFavorite(pokemon); 
   };
 
   if (loading) {
@@ -54,13 +61,22 @@ export default function PokemonScreen() {
         data={pokemonData}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[styles.item, isDarkMode && styles.darkItem]}
-            onPress={() => handleNavigateToDetails(item.id)}
-          >
-            <Image source={{ uri: item.image }} style={styles.image} />
-            <Text style={[styles.itemText, isDarkMode && styles.darkItemText]}>{item.name}</Text>
-          </TouchableOpacity>
+          <View style={[styles.itemContainer, isDarkMode && styles.darkItemContainer]}>
+            <TouchableOpacity
+              style={[styles.item, isDarkMode && styles.darkItem]}
+              onPress={() => handleNavigateToDetails(item.id)}
+            >
+              <Image source={{ uri: item.image }} style={styles.image} />           
+              <Text style={[styles.itemText, isDarkMode && styles.darkItemText]}>{item.name} #{item.id}</Text>
+            </TouchableOpacity>
+            
+            {/* Add to Favorites Button */}
+            <TouchableOpacity onPress={() => handleAddToFavorites(item)}>
+              <Text style={[styles.favoriteButton, item.isFavorite && styles.favoriteButtonAdded]}>
+                {item.isFavorite ? 'Added to Favorites' : 'Add to Favorites'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         )}
       />
     </View>
@@ -76,13 +92,21 @@ const styles = StyleSheet.create({
   darkContainer: {
     backgroundColor: '#333',
   },
+  itemContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between', // Ensure spacing between Pokémon info and Favorite button
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  darkItemContainer: {
+    borderBottomColor: '#555',
+  },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    width: '100%',
+    flex: 1,
   },
   darkItem: {
     borderBottomColor: '#555',
@@ -99,6 +123,13 @@ const styles = StyleSheet.create({
   },
   darkItemText: {
     color: '#fff',
+  },
+  favoriteButton: {
+    color: '#007BFF',
+    padding: 10,
+  },
+  favoriteButtonAdded: {
+    color: '#28a745', 
   },
   loader: {
     flex: 1,

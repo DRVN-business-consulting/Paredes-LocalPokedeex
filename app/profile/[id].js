@@ -75,8 +75,8 @@ export default function ProfileScreen() {
   return (
     <ScrollView contentContainerStyle={[styles.container, isDarkMode && styles.darkContainer]}>
       <View style={[styles.card, isDarkMode && styles.darkCard, { backgroundColor: cardColor }]}>
-        {/* Display Pokémon ID */}
-        <Text style={[styles.pokemonId, isDarkMode && styles.darkPokemonId]}>Pokémon#{pokemon.id}</Text>
+
+        <Text style={[styles.pokemonId, isDarkMode && styles.darkPokemonId]}>Pokémon #{pokemon.id}</Text>
         
         <Image
           source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.id}.png` }}
@@ -126,16 +126,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   darkCard: {
-    shadowColor: '#222', // darker shadow for dark mode
+    shadowColor: '#222', 
   },
   pokemonId: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#666',
+    color: 'black',
     marginBottom: 4,
   },
   darkPokemonId: {
-    color: '#bbb',
+    color: 'white',
   },
   image: {
     width: 200,

@@ -1,5 +1,5 @@
-
 import { Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons'; 
 
 export default function TabLayout() {
   return (
@@ -8,25 +8,36 @@ export default function TabLayout() {
         name='index'
         options={{
           title: 'Pokémon List',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="list" color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen
         name='groupList'
         options={{
           title: 'Group List',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people" color={color} size={size} />
+          ),
         }}
       />
-            <Tabs.Screen
+      <Tabs.Screen
         name='favorites'
         options={{
-          title: 'favorites',
+          title: 'Favorites',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="heart" color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen
         name='Settings'
         options={{
           title: 'Settings',
-          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings" color={color} size={size} />
+          ),
         }}
       />
     </Tabs>

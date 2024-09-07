@@ -11,14 +11,13 @@ export default function Settings() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await Updates.reloadAsync(); // Reloads the app as on.back gives me a hard time with the samefile names
+    await Updates.reloadAsync(); // Reloads the app as the on.back gives me a hard time with the samefile names
     router.replace('/'); 
   };
 
   return (
     <View style={[styles.container, isDarkMode && styles.darkContainer]}>
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
-      <Text style={[styles.text, isDarkMode && styles.darkText]}>Settings</Text>
       <View style={styles.switchContainer}>
         <Text style={[styles.label, isDarkMode && styles.darkText]}>Switch Theme</Text>
         <Switch
