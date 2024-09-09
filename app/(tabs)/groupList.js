@@ -13,28 +13,42 @@ export default function GroupList() {
   const [pokemonData, setPokemonData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const POKEMON_LIMIT_PER_TYPE = 5;
 
   useEffect(() => {
     const fetchPokemonFromStorage = async () => {
       try {
         const keys = await AsyncStorage.getAllKeys();
-        const pokemonKeys = keys.filter((key) => key.startsWith('pokemon_')); // Only get Pokémon keys
+        const pokemonKeys = keys.filter(key => key.startsWith('pokemon_'));
+
+        if (pokemonKeys.length === 0) {
+          throw new Error('No Pokémon data found in storage');
+        }
 
         const pokemonValues = await AsyncStorage.multiGet(pokemonKeys);
-        const storedPokemon = pokemonValues.map(([key, value]) => JSON.parse(value));
 
-        // Gather all unique Pokémon types
-        const allTypes = [...new Set(storedPokemon.map(pokemon => pokemon.profile.type[0]))];
+        const storedPokemon = pokemonValues.map(([key, value]) => {
+          try {
+            return JSON.parse(value);
+          } catch (parseError) {
+            console.error(`Failed to parse Pokémon data for key ${key}:`, parseError);
+            return null;
+          }
+        }).filter(pokemon => pokemon !== null);
 
-        // Group Pokémon by type
+        if (storedPokemon.length === 0) {
+          throw new Error('No valid Pokémon data found in storage');
+        }
+
+        const allTypes = [...new Set(storedPokemon.map(pokemon => pokemon.type[0]))];
+
         const groupedByType = allTypes.reduce((acc, type) => {
-          acc[type] = storedPokemon.filter(pokemon => pokemon.profile.type[0] === type);
+          acc[type] = storedPokemon.filter(pokemon => pokemon.type[0] === type);
           return acc;
         }, {});
 
         setPokemonData(groupedByType);
       } catch (err) {
+        console.error('Failed to load Pokémon data from storage:', err);
         setError('Failed to load Pokémon data from storage');
       } finally {
         setLoading(false);
@@ -67,35 +81,32 @@ export default function GroupList() {
   return (
     <View style={[styles.container, isDarkMode && styles.darkContainer]}>
       <FlatList
-        data={Object.keys(pokemonData)} // List the types
+        data={Object.keys(pokemonData)} // List of types
         keyExtractor={(item) => item}
-        renderItem={({ item }) => (
+        renderItem={({ item: type }) => (
           <View style={styles.group}>
             <Text style={[styles.groupTitle, isDarkMode && styles.darkGroupTitle]}>
-              {item.charAt(0).toUpperCase() + item.slice(1)} Pokémon
+              {type.charAt(0).toUpperCase() + type.slice(1)} Pokémon
             </Text>
             <FlatList
-              data={pokemonData[item].slice(0, POKEMON_LIMIT_PER_TYPE)} // Limit per type
+              data={pokemonData[type]} // List of Pokémon in each type
               keyExtractor={(pokemon) => pokemon.id.toString()}
               renderItem={({ item }) => (
-                <View style={styles.itemContainer}>
+                <View style={[styles.itemContainer, isDarkMode && styles.darkItemContainer]}>
                   <TouchableOpacity
                     style={[styles.item, isDarkMode && styles.darkItem]}
                     onPress={() => handleNavigateToDetails(item.id)}
                   >
-                    <Image source={{ uri: item.localImage }} style={styles.image} />
+                    <Image source={{ uri: item.localImage }} style={styles.image} />           
                     <Text style={[styles.itemText, isDarkMode && styles.darkItemText]}>
                       {item.name} #{item.id}
                     </Text>
                   </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() =>
-                      item.isFavorite ? handleRemoveFromFavorites(item) : handleAddToFavorites(item)
-                    }
-                  >
-                    <Text style={[styles.favoriteButton, item.isFavorite && styles.favoriteButtonAdded]}>
-                      {item.isFavorite ? 'Added to Favorites' : 'Add to Favorites'}
+                  
+                  {/* Add to Favorites Button */}
+                  <TouchableOpacity onPress={() => handleAddToFavorites(item)}>
+                    <Text style={[styles.favoriteButton, item.isFavorite && styles.favoriteButtonActive]}>
+                      {item.isFavorite ? '★' : '☆'}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -111,8 +122,7 @@ export default function GroupList() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    padding: 16,
+    padding: 10,
   },
   darkContainer: {
     backgroundColor: '#333',
@@ -130,14 +140,13 @@ const styles = StyleSheet.create({
   },
   itemContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    marginBottom: 10,
   },
   darkItemContainer: {
-    borderBottomColor: '#555',
+    backgroundColor: '#444',
+    borderRadius: 5,
+    padding: 10,
   },
   item: {
     flexDirection: 'row',
@@ -145,34 +154,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   darkItem: {
-    borderBottomColor: '#555',
+    backgroundColor: '#555',
   },
   image: {
-    width: 100,
-    height: 100,
-    resizeMode: 'contain',
+    width: 50,
+    height: 50,
     marginRight: 10,
   },
   itemText: {
     fontSize: 16,
-    color: '#000',
+    flex: 1,
   },
   darkItemText: {
     color: '#fff',
   },
   favoriteButton: {
-    color: '#007BFF',
-    padding: 10,
+    fontSize: 24,
+    color: '#888',
   },
-  favoriteButtonAdded: {
-    color: '#28a745',
+  favoriteButtonActive: {
+    color: '#f00',
   },
   loader: {
-    flex: 1,
-    justifyContent: 'center',
+    marginTop: 20,
   },
   error: {
     color: 'red',
+    textAlign: 'center',
+    marginTop: 20,
   },
   darkError: {
     color: '#f88',

@@ -47,7 +47,7 @@ export default function App() {
 
   // Hardcoded credentials (store the encrypted password instead of plain text)
   const validUsername = 'User';
-  const validEncryptedPassword = caesarEncrypt('pass', 3); // Encrypt the hardcoded password using Caesar cipher
+  const validEncryptedPassword = caesarEncrypt('a', 3); // Encrypt the hardcoded password using Caesar cipher
 
   // Handle login
   const handleLogin = async () => {
