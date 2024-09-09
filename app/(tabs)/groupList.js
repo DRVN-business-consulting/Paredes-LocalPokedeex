@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
-import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useFavorites } from '../../src/theme/FavoritesContext';
 import { useRouter } from 'expo-router';
@@ -16,39 +16,32 @@ export default function GroupList() {
   const POKEMON_LIMIT_PER_TYPE = 5;
 
   useEffect(() => {
-    const fetchPokemonData = async () => {
+    const fetchPokemonFromStorage = async () => {
       try {
-        const response = await axios.get('http://192.168.100.6:8000/pokemon?limit=50');
-        const pokemonList = response.data;
+        const keys = await AsyncStorage.getAllKeys();
+        const pokemonKeys = keys.filter((key) => key.startsWith('pokemon_')); // Only get Pokémon keys
 
-        const detailedPokemonPromises = pokemonList.map(async (pokemon) => ({
-          id: pokemon.id,
-          name: pokemon.name.english,
-          image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.id}.png`,
-          primaryType: pokemon.type[0],
-          isFavorite: favorites.some(fav => fav.id === pokemon.id),
-        }));
-
-        const detailedPokemon = await Promise.all(detailedPokemonPromises);
+        const pokemonValues = await AsyncStorage.multiGet(pokemonKeys);
+        const storedPokemon = pokemonValues.map(([key, value]) => JSON.parse(value));
 
         // Gather all unique Pokémon types
-        const allTypes = [...new Set(detailedPokemon.map(p => p.primaryType))];
+        const allTypes = [...new Set(storedPokemon.map(pokemon => pokemon.profile.type[0]))];
 
         // Group Pokémon by type
         const groupedByType = allTypes.reduce((acc, type) => {
-          acc[type] = detailedPokemon.filter(pokemon => pokemon.primaryType === type);
+          acc[type] = storedPokemon.filter(pokemon => pokemon.profile.type[0] === type);
           return acc;
         }, {});
 
         setPokemonData(groupedByType);
       } catch (err) {
-        setError('Failed to load Pokémon data');
+        setError('Failed to load Pokémon data from storage');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPokemonData();
+    fetchPokemonFromStorage();
   }, [favorites]);
 
   const handleNavigateToDetails = (pokemonId) => {
@@ -74,15 +67,15 @@ export default function GroupList() {
   return (
     <View style={[styles.container, isDarkMode && styles.darkContainer]}>
       <FlatList
-        data={Object.keys(pokemonData)}
+        data={Object.keys(pokemonData)} // List the types
         keyExtractor={(item) => item}
         renderItem={({ item }) => (
           <View style={styles.group}>
             <Text style={[styles.groupTitle, isDarkMode && styles.darkGroupTitle]}>
-              {item.charAt(0).toUpperCase() + item.slice(1)}
+              {item.charAt(0).toUpperCase() + item.slice(1)} Pokémon
             </Text>
             <FlatList
-              data={pokemonData[item].slice(0, POKEMON_LIMIT_PER_TYPE)}
+              data={pokemonData[item].slice(0, POKEMON_LIMIT_PER_TYPE)} // Limit per type
               keyExtractor={(pokemon) => pokemon.id.toString()}
               renderItem={({ item }) => (
                 <View style={styles.itemContainer}>
@@ -90,12 +83,16 @@ export default function GroupList() {
                     style={[styles.item, isDarkMode && styles.darkItem]}
                     onPress={() => handleNavigateToDetails(item.id)}
                   >
-                    <Image source={{ uri: item.image }} style={styles.image} />
-                    <Text style={[styles.itemText, isDarkMode && styles.darkItemText]}>{item.name} #{item.id}</Text>
+                    <Image source={{ uri: item.localImage }} style={styles.image} />
+                    <Text style={[styles.itemText, isDarkMode && styles.darkItemText]}>
+                      {item.name} #{item.id}
+                    </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    onPress={() => item.isFavorite ? handleRemoveFromFavorites(item) : handleAddToFavorites(item)}
+                    onPress={() =>
+                      item.isFavorite ? handleRemoveFromFavorites(item) : handleAddToFavorites(item)
+                    }
                   >
                     <Text style={[styles.favoriteButton, item.isFavorite && styles.favoriteButtonAdded]}>
                       {item.isFavorite ? 'Added to Favorites' : 'Add to Favorites'}

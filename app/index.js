@@ -2,8 +2,42 @@ import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ImageBackground } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 
 import PikachuImage from '../assets/image.png'; 
+
+// Caesar cipher encryption function
+const caesarEncrypt = (text, shift) => {
+  return text
+    .split('')
+    .map((char) => {
+      // Only shift alphabetic characters
+      if (char.match(/[a-z]/i)) {
+        let code = char.charCodeAt(0);
+
+        // Uppercase letters
+        if (code >= 65 && code <= 90) {
+          return String.fromCharCode(((code - 65 + shift) % 26) + 65);
+        }
+        // Lowercase letters
+        else if (code >= 97 && code <= 122) {
+          return String.fromCharCode(((code - 97 + shift) % 26) + 97);
+        }
+      }
+      return char; // Return non-alphabetic characters as-is
+    })
+    .join('');
+};
+
+// Function to save encrypted password securely
+async function saveEncryptedPassword(key, value) {
+  await SecureStore.setItemAsync(key, value);
+}
+
+// Function to retrieve the stored encrypted password
+async function getEncryptedPassword(key) {
+  return await SecureStore.getItemAsync(key);
+}
 
 export default function App() {
   const router = useRouter();
@@ -11,12 +45,23 @@ export default function App() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  // Hardcoded credentials
+  // Hardcoded credentials (store the encrypted password instead of plain text)
   const validUsername = 'User';
-  const validPassword = '123';
+  const validEncryptedPassword = caesarEncrypt('pass', 3); // Encrypt the hardcoded password using Caesar cipher
 
-  const handleLogin = () => {
-    if (username === validUsername && password === validPassword) {
+  // Handle login
+  const handleLogin = async () => {
+    // Encrypt the input password with Caesar cipher
+    const encryptedPassword = caesarEncrypt(password, 3);
+
+    // Log the encrypted password to the console
+    console.log('Encrypted Password:', encryptedPassword);
+
+    // Save the encrypted password securely
+    await saveEncryptedPassword('userPassword', encryptedPassword);
+
+    // Verify username and password
+    if (username === validUsername && encryptedPassword === validEncryptedPassword) {
       router.push('/(tabs)');
     } else {
       setError('Incorrect username or password');
@@ -25,7 +70,7 @@ export default function App() {
 
   return (
     <ImageBackground
-      source={PikachuImage} // refer to the import local image
+      source={PikachuImage} // refer to the imported local image
       style={styles.backgroundImage}
       resizeMode="cover"
     >
