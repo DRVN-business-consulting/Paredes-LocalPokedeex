@@ -1,48 +1,37 @@
+// app/(tabs)/groupList.js
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../src/theme/ThemeContext';
-import { useFavorites } from '../../src/theme/FavoritesContext';
+import { useFavorites } from '../../src/theme/FavoritesContext'; 
 import { useRouter } from 'expo-router';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { fetchPokemonFromStorage } from '../utils/storageUtils'; 
 
 export default function GroupList() {
   const router = useRouter();
   const { theme } = useTheme();
-  const { favorites, addFavorite, removeFavorite } = useFavorites();
+  const { favorites, addFavorite, removeFavorite } = useFavorites(); 
   const isDarkMode = theme === 'dark';
   const [pokemonData, setPokemonData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchPokemonFromStorage = async () => {
+    const loadPokemonData = async () => {
       try {
-        const keys = await AsyncStorage.getAllKeys();
-        const pokemonKeys = keys.filter(key => key.startsWith('pokemon_'));
+        const storedPokemon = await fetchPokemonFromStorage(); 
 
-        if (pokemonKeys.length === 0) {
-          throw new Error('No Pokémon data found in storage');
-        }
+        // Mark favorites
+        const markedPokemon = storedPokemon.map(pokemon => ({
+          ...pokemon,
+          isFavorite: favorites.some(fav => fav.id === pokemon.id),
+        }));
 
-        const pokemonValues = await AsyncStorage.multiGet(pokemonKeys);
-
-        const storedPokemon = pokemonValues.map(([key, value]) => {
-          try {
-            return JSON.parse(value);
-          } catch (parseError) {
-            console.error(`Failed to parse Pokémon data for key ${key}:`, parseError);
-            return null;
-          }
-        }).filter(pokemon => pokemon !== null);
-
-        if (storedPokemon.length === 0) {
-          throw new Error('No valid Pokémon data found in storage');
-        }
-
-        const allTypes = [...new Set(storedPokemon.map(pokemon => pokemon.type[0]))];
-
+        // Group Pokémon by type
+        const allTypes = [...new Set(markedPokemon.map(pokemon => pokemon.type[0]))];
         const groupedByType = allTypes.reduce((acc, type) => {
-          acc[type] = storedPokemon.filter(pokemon => pokemon.type[0] === type);
+          acc[type] = markedPokemon.filter(pokemon => pokemon.type[0] === type);
           return acc;
         }, {});
 
@@ -55,19 +44,28 @@ export default function GroupList() {
       }
     };
 
-    fetchPokemonFromStorage();
-  }, [favorites]);
+    loadPokemonData();
+  }, [favorites]); 
 
   const handleNavigateToDetails = (pokemonId) => {
     router.push(`/profile/${pokemonId}`);
   };
 
-  const handleAddToFavorites = (pokemon) => {
-    addFavorite(pokemon);
-  };
-
-  const handleRemoveFromFavorites = (pokemon) => {
-    removeFavorite(pokemon);
+  const handleToggleFavorite = async (pokemon) => {
+    if (pokemon.isFavorite) {
+      await removeFavorite(pokemon.id);
+    } else {
+      await addFavorite(pokemon);
+    }
+    setPokemonData((prevData) => {
+      const updatedData = { ...prevData };
+      Object.keys(updatedData).forEach((type) => {
+        updatedData[type] = updatedData[type].map(p => 
+          p.id === pokemon.id ? { ...p, isFavorite: !p.isFavorite } : p
+        );
+      });
+      return updatedData;
+    });
   };
 
   if (loading) {
@@ -81,15 +79,13 @@ export default function GroupList() {
   return (
     <View style={[styles.container, isDarkMode && styles.darkContainer]}>
       <FlatList
-        data={Object.keys(pokemonData)} // List of types
+        data={Object.keys(pokemonData)}
         keyExtractor={(item) => item}
-        renderItem={({ item: type }) => (
-          <View style={styles.group}>
-            <Text style={[styles.groupTitle, isDarkMode && styles.darkGroupTitle]}>
-              {type.charAt(0).toUpperCase() + type.slice(1)} Pokémon
-            </Text>
+        renderItem={({ item }) => (
+          <View style={styles.groupContainer}>
+            <Text style={[styles.groupTitle, isDarkMode && styles.darkGroupTitle]}>{item}</Text>
             <FlatList
-              data={pokemonData[type]} // List of Pokémon in each type
+              data={pokemonData[item]} // List as group
               keyExtractor={(pokemon) => pokemon.id.toString()}
               renderItem={({ item }) => (
                 <View style={[styles.itemContainer, isDarkMode && styles.darkItemContainer]}>
@@ -97,17 +93,20 @@ export default function GroupList() {
                     style={[styles.item, isDarkMode && styles.darkItem]}
                     onPress={() => handleNavigateToDetails(item.id)}
                   >
-                    <Image source={{ uri: item.localImage }} style={styles.image} />           
-                    <Text style={[styles.itemText, isDarkMode && styles.darkItemText]}>
-                      {item.name} #{item.id}
-                    </Text>
-                  </TouchableOpacity>
-                  
-                  {/* Add to Favorites Button */}
-                  <TouchableOpacity onPress={() => handleAddToFavorites(item)}>
-                    <Text style={[styles.favoriteButton, item.isFavorite && styles.favoriteButtonActive]}>
-                      {item.isFavorite ? '★' : '☆'}
-                    </Text>
+                    <Image source={{ uri: item.localImage }} style={styles.image} />
+                    <View style={styles.infoContainer}>
+                      <Text style={[styles.pokemonName, isDarkMode && styles.darkPokemonName]}>{item.name} #{item.id}</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.favoriteButton}
+                      onPress={() => handleToggleFavorite(item)}
+                    >
+                      <Icon
+                        name={item.isFavorite ? 'heart' : 'heart-outline'}
+                        size={24}
+                        color={item.isFavorite ? 'red' : isDarkMode ? '#fff' : '#000'}
+                      />
+                    </TouchableOpacity>
                   </TouchableOpacity>
                 </View>
               )}
@@ -122,16 +121,16 @@ export default function GroupList() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
+    padding: 16,
   },
   darkContainer: {
-    backgroundColor: '#333',
+    backgroundColor: '#1e1e1e',
   },
-  group: {
+  groupContainer: {
     marginBottom: 20,
   },
   groupTitle: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 10,
   },
@@ -141,42 +140,49 @@ const styles = StyleSheet.create({
   itemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 8,
     marginBottom: 10,
+    elevation: 2, // Shadow effect for Android
+    shadowColor: '#000', // Shadow color for iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   darkItemContainer: {
-    backgroundColor: '#444',
-    borderRadius: 5,
-    padding: 10,
+    backgroundColor: '#333',
   },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-  },
-  darkItem: {
-    backgroundColor: '#555',
+    width: '100%',
   },
   image: {
-    width: 50,
-    height: 50,
+    width: 80,
+    height: 80,
     marginRight: 10,
   },
-  itemText: {
-    fontSize: 16,
+  infoContainer: {
     flex: 1,
   },
-  darkItemText: {
+  pokemonName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  darkPokemonName: {
     color: '#fff',
   },
-  favoriteButton: {
-    fontSize: 24,
+  pokemonId: {
+    fontSize: 14,
     color: '#888',
   },
-  favoriteButtonActive: {
-    color: '#f00',
+  favoriteButton: {
+    padding: 10,
   },
   loader: {
-    marginTop: 20,
+    flex: 1,
+    justifyContent: 'center',
   },
   error: {
     color: 'red',
@@ -184,6 +190,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   darkError: {
-    color: '#f88',
+    color: '#fff',
   },
 });

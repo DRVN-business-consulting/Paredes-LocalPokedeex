@@ -1,3 +1,6 @@
+// app/(tabs)/groupList.js
+
+
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, Text, Switch, TouchableOpacity } from 'react-native';
