@@ -93,9 +93,9 @@ export default function GroupList() {
                     style={[styles.item, isDarkMode && styles.darkItem]}
                     onPress={() => handleNavigateToDetails(item.id)}
                   >
-                    <Image source={{ uri: item.localImage }} style={styles.image} />
+                    <Image source={{  uri: item.image.hires  }} style={styles.image} />
                     <View style={styles.infoContainer}>
-                      <Text style={[styles.pokemonName, isDarkMode && styles.darkPokemonName]}>{item.name} #{item.id}</Text>
+                      <Text style={[styles.pokemonName, isDarkMode && styles.darkPokemonName]}>{item.name.english} #{item.id}</Text>
                     </View>
                     <TouchableOpacity
                       style={styles.favoriteButton}

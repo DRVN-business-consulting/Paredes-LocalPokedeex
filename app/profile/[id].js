@@ -1,3 +1,4 @@
+// app/profile/[id].js
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, ActivityIndicator, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -159,6 +160,7 @@ export default function ProfileScreen() {
     </ScrollView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

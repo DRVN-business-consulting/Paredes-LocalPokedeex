@@ -1,6 +1,6 @@
 // app/(tabs)/favorites.js
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useFavorites } from '../../src/theme/FavoritesContext'; 
@@ -10,23 +10,9 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 export default function Favorites() {
   const router = useRouter();
   const { theme } = useTheme();
-  const { favorites, removeFavorite } = useFavorites(); 
+  const { favorites, removeFavorite, loading, error } = useFavorites(); 
   const isDarkMode = theme === 'dark';
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
-  useEffect(() => {
-    const fetchFavorites = async () => {
-      try {
-        setLoading(false);
-      } catch (err) {
-        console.error('Failed to load favorites:', err);
-        setError('Failed to load favorites');
-      }
-    };
-
-    fetchFavorites();
-  }, [favorites]); 
   const handleDeleteFavorite = async (pokemonId) => {
     try {
       await removeFavorite(pokemonId);
@@ -45,35 +31,43 @@ export default function Favorites() {
 
   return (
     <View style={[styles.container, isDarkMode && styles.darkContainer]}>
-      <FlatList
-        data={favorites}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View style={[styles.cardContainer, isDarkMode && styles.darkCardContainer]}>
-            <TouchableOpacity
-              style={styles.cardContent}
-              onPress={() => router.push(`/profile/${item.id}`)}
-            >
-              <Image source={{ uri: item.localImage }} style={styles.image} />
-              <View style={styles.textContainer}>
-                <Text style={[styles.pokemonName, isDarkMode && styles.darkPokemonName]}>
-                  {item.name} # {item.id}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => handleDeleteFavorite(item.id)}
-                  style={styles.deleteButton}
-                >
-                  <Icon
-                    name="delete-outline"
-                    size={24}
-                    color={isDarkMode ? '#fff' : '#000'}
-                  />
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          </View>
-        )}
-      />
+      {favorites.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={[styles.emptyMessage, isDarkMode && styles.darkEmptyMessage]}>
+            No Favorites Yet
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={favorites}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <View style={[styles.cardContainer, isDarkMode && styles.darkCardContainer]}>
+              <TouchableOpacity
+                style={styles.cardContent}
+                onPress={() => router.push(`/profile/${item.id}`)}
+              >
+                <Image source={{ uri: item.image.hires }} style={styles.image} />
+                <View style={styles.textContainer}>
+                  <Text style={[styles.pokemonName, isDarkMode && styles.darkPokemonName]}>
+                    {item.name.english || 'Unknown'} # {item.id}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => handleDeleteFavorite(item.id)}
+                    style={styles.deleteButton}
+                  >
+                    <Icon
+                      name="delete-outline"
+                      size={24}
+                      color={isDarkMode ? '#fff' : '#000'}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -136,6 +130,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   darkError: {
+    color: '#fff',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyMessage: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  darkEmptyMessage: {
     color: '#fff',
   },
 });

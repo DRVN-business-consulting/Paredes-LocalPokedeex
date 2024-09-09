@@ -1,4 +1,4 @@
-// app/(tabs)/Index.js
+// app/(tabs)/index.js
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
@@ -7,6 +7,7 @@ import { useFavorites } from '../../src/theme/FavoritesContext';
 import { fetchPokemonFromStorage } from '../utils/storageUtils'; 
 import { useRouter } from 'expo-router';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 
 export default function Index() {
   const router = useRouter();
@@ -84,10 +85,10 @@ export default function Index() {
               style={styles.cardContent}
               onPress={() => handleNavigateToDetails(item.id)}
             >
-              <Image source={{ uri: item.localImage }} style={styles.image} />
+              <Image source={{ uri: item.image.hires }} style={styles.image} />
               <View style={styles.textContainer}>
                 <Text style={[styles.pokemonName, isDarkMode && styles.darkPokemonName]}>
-                 {item.name} # {item.id} 
+                  {item.name.english || 'Unknown'} # {item.id} 
                 </Text>
                 <View style={styles.iconContainer}>
                   <TouchableOpacity
