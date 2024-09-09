@@ -22,13 +22,13 @@ export default function GroupList() {
       try {
         const storedPokemon = await fetchPokemonFromStorage(); 
 
-        // Mark favorites
+        
         const markedPokemon = storedPokemon.map(pokemon => ({
           ...pokemon,
           isFavorite: favorites.some(fav => fav.id === pokemon.id),
         }));
 
-        // Group Pokémon by type
+        
         const allTypes = [...new Set(markedPokemon.map(pokemon => pokemon.type[0]))];
         const groupedByType = allTypes.reduce((acc, type) => {
           acc[type] = markedPokemon.filter(pokemon => pokemon.type[0] === type);
@@ -144,8 +144,6 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     marginBottom: 10,
-    elevation: 2, // Shadow effect for Android
-    shadowColor: '#000', // Shadow color for iOS
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,

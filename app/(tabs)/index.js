@@ -7,7 +7,7 @@ import { useFavorites } from '../../src/theme/FavoritesContext';
 import { fetchPokemonFromStorage } from '../utils/storageUtils'; 
 import { useRouter } from 'expo-router';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 export default function Index() {
   const router = useRouter();

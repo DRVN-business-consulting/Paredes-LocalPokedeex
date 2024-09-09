@@ -11,30 +11,25 @@ const caesarEncrypt = (text, shift) => {
   return text
     .split('')
     .map((char) => {
-      // Only shift alphabetic characters
       if (char.match(/[a-z]/i)) {
         let code = char.charCodeAt(0);
 
-        // Uppercase letters
         if (code >= 65 && code <= 90) {
           return String.fromCharCode(((code - 65 + shift) % 26) + 65);
         }
-        // Lowercase letters
         else if (code >= 97 && code <= 122) {
           return String.fromCharCode(((code - 97 + shift) % 26) + 97);
         }
       }
-      return char; // Return non-alphabetic characters as-is
+      return char; 
     })
     .join('');
 };
 
-// Function to save encrypted password securely
 async function saveEncryptedPassword(key, value) {
   await SecureStore.setItemAsync(key, value);
 }
 
-// Function to retrieve the stored encrypted password
 async function getEncryptedPassword(key) {
   return await SecureStore.getItemAsync(key);
 }
@@ -45,22 +40,16 @@ export default function App() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  // Hardcoded credentials (store the encrypted password instead of plain text)
   const validUsername = 'User';
   const validEncryptedPassword = caesarEncrypt('a', 3); // Encrypt the hardcoded password using Caesar cipher
 
-  // Handle login
   const handleLogin = async () => {
-    // Encrypt the input password with Caesar cipher
     const encryptedPassword = caesarEncrypt(password, 3);
 
-    // Log the encrypted password to the console
     console.log('Encrypted Password:', encryptedPassword);
 
-    // Save the encrypted password securely
     await saveEncryptedPassword('userPassword', encryptedPassword);
 
-    // Verify username and password
     if (username === validUsername && encryptedPassword === validEncryptedPassword) {
       router.push('/(tabs)');
     } else {
@@ -143,7 +132,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   button: {
-    backgroundColor: '#FFCC00', // Pokémon yellow
+    backgroundColor: '#FFCC00',
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 10,
@@ -152,7 +141,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   buttonText: {
-    color: '#000', // Black text for contrast
+    color: '#000', 
     fontSize: 18,
     fontWeight: 'bold',
   },
