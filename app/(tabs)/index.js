@@ -1,5 +1,4 @@
 // app/(tabs)/index.js
-
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../src/theme/ThemeContext';
@@ -20,6 +19,7 @@ export default function Index() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Fetch updated Pokémon data from AsyncStorage
         const storedPokemon = await fetchPokemonFromStorage();
         const updatedPokemon = storedPokemon.map(pokemon => ({
           ...pokemon,
@@ -27,8 +27,8 @@ export default function Index() {
         }));
         setPokemonData(updatedPokemon);
       } catch (err) {
-        console.error('Failed to load Pokémon data from storage:', err);
-        setError('Failed to load Pokémon data from storage');
+        console.error('Failed to load Pokémon data:', err);
+        setError('Failed to load Pokémon data');
       } finally {
         setLoading(false);
       }
@@ -42,26 +42,27 @@ export default function Index() {
   };
 
   const handleToggleFavorite = async (pokemon) => {
-    if (pokemon.isFavorite) {
-      await removeFavorite(pokemon.id);
-    } else {
-      await addFavorite(pokemon);
-    }
+    try {
+      if (pokemon.isFavorite) {
+        await removeFavorite(pokemon.id);
+      } else {
+        await addFavorite(pokemon);
+      }
 
-    setPokemonData(prevData =>
-      prevData.map(p =>
-        p.id === pokemon.id ? { ...p, isFavorite: !p.isFavorite } : p
-      )
-    );
+      setPokemonData(prevData =>
+        prevData.map(p =>
+          p.id === pokemon.id ? { ...p, isFavorite: !p.isFavorite } : p
+        )
+      );
+    } catch (err) {
+      console.error('Failed to toggle favorite:', err);
+    }
   };
 
   const handleDeletePokemon = async (pokemonId) => {
     try {
-
       await deletePokemonFromStorage(pokemonId);
-
       setPokemonData(prevData => prevData.filter(pokemon => pokemon.id !== pokemonId));
-
       await removeFavorite(pokemonId);
     } catch (err) {
       console.error('Failed to delete Pokémon from storage:', err);
@@ -119,8 +120,6 @@ export default function Index() {
     </View>
   );
 }
-
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

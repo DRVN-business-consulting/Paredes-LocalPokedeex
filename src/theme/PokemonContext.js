@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchPokemonFromStorage } from '../utils/storageUtils';
+import { fetchPokemonFromStorage, fetchAndStorePokemonData } from '../utils/storageUtils';
 
 const PokemonContext = createContext();
 
@@ -11,6 +10,7 @@ export const PokemonProvider = ({ children }) => {
 
   useEffect(() => {
     const loadPokemonData = async () => {
+      setLoading(true);
       try {
         const storedPokemon = await fetchPokemonFromStorage();
         setPokemonData(storedPokemon);
@@ -25,8 +25,22 @@ export const PokemonProvider = ({ children }) => {
     loadPokemonData();
   }, []);
 
+  // Function to refresh Pokémon data
+  const refreshPokemonData = async () => {
+    setLoading(true);
+    try {
+      const newData = await fetchAndStorePokemonData();
+      setPokemonData(newData);
+    } catch (err) {
+      console.error('Failed to fetch Pokémon data from API:', err);
+      setError('Failed to fetch Pokémon data from API');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <PokemonContext.Provider value={{ pokemonData, setPokemonData, loading, error }}>
+    <PokemonContext.Provider value={{ pokemonData, setPokemonData, loading, error, refreshPokemonData }}>
       {children}
     </PokemonContext.Provider>
   );
