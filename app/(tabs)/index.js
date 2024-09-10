@@ -129,7 +129,7 @@ export default function Index() {
         },
       };
 
-      const updatedPokemonData = [...pokemonData, newPokemon]; // Add new Pokémon to the list
+      const updatedPokemonData = [...pokemonData, newPokemon]; 
       await AsyncStorage.setItem('pokemon_data', JSON.stringify(updatedPokemonData));
       setPokemonData(updatedPokemonData);
 
@@ -142,7 +142,7 @@ export default function Index() {
   };
 
   const handleNavigateToDetails = (pokemonId) => {
-    router.push(`/profile/${pokemonId}`); // Navigate to the profile screen with the Pokémon ID
+    router.push(`/profile/${pokemonId}`); 
   };
 
   return (
