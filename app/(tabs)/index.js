@@ -1,11 +1,13 @@
 // app/(tabs)/index.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOpacity, Button } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOpacity, Modal, TextInput, Button } from 'react-native';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useFavorites } from '../../src/theme/FavoritesContext';
 import { fetchPokemonFromStorage, deletePokemonFromStorage, clearPokemonStorage, fetchAndStorePokemonData } from '../utils/storageUtils';
 import { useRouter } from 'expo-router';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 export default function Index() {
   const router = useRouter();
@@ -15,6 +17,9 @@ export default function Index() {
   const [pokemonData, setPokemonData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editingPokemon, setEditingPokemon] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [isModalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -87,6 +92,29 @@ export default function Index() {
     }
   };
 
+  const handleEditPokemon = async () => {
+    if (!editingPokemon || !editName.trim()) return;
+
+    try {
+      const updatedPokemonData = pokemonData.map(pokemon =>
+        pokemon.id === editingPokemon.id
+          ? { ...pokemon, name: { ...pokemon.name, english: editName } }
+          : pokemon
+      );
+      
+      // Update in AsyncStorage
+      await AsyncStorage.setItem('pokemon_data', JSON.stringify(updatedPokemonData));
+      setPokemonData(updatedPokemonData);
+
+      // Hide the modal
+      setModalVisible(false);
+      setEditingPokemon(null);
+      setEditName('');
+    } catch (err) {
+      console.error('Failed to edit Pokémon name:', err);
+    }
+  };
+
   return (
     <View style={[styles.container, isDarkMode && styles.darkContainer]}>
       {loading ? (
@@ -130,12 +158,48 @@ export default function Index() {
                           color={isDarkMode ? '#fff' : '#000'}
                         />
                       </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={() => {
+                          setEditingPokemon(item);
+                          setEditName(item.name.english);
+                          setModalVisible(true);
+                        }}
+                        style={styles.editButton}
+                      >
+                        <Icon
+                          name="pencil-outline"
+                          size={24}
+                          color={isDarkMode ? '#fff' : '#000'}
+                        />
+                      </TouchableOpacity>
                     </View>
                   </View>
                 </TouchableOpacity>
               </View>
             )}
           />
+
+          <Modal
+            visible={isModalVisible}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Edit Pokémon Name</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={editName}
+                  onChangeText={setEditName}
+                  placeholder="Enter new name"
+                />
+                <Button title="Save Changes" onPress={handleEditPokemon} />
+                <Button title="Cancel" onPress={() => setModalVisible(false)} />
+              </View>
+            </View>
+          </Modal>
         </>
       )}
     </View>
@@ -154,7 +218,7 @@ const styles = StyleSheet.create({
   cardContainer: {
     backgroundColor: '#fff',
     borderRadius: 10,
-    elevation: 3, 
+    elevation: 3,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -193,6 +257,10 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 5,
   },
+  editButton: {
+    padding: 5,
+    marginLeft: 10,
+  },
   iconContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -208,5 +276,41 @@ const styles = StyleSheet.create({
   },
   darkError: {
     color: '#fff',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  input: {
+    width: '100%',
+    borderColor: '#ddd',
+    borderWidth: 1,
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 20,
+  },
+  modalButton: {
+    backgroundColor: '#007bff',
+    padding: 10,
+    borderRadius: 5,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
   },
 });
