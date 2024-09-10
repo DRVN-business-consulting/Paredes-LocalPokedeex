@@ -46,10 +46,17 @@ export default function Index() {
   const handleFetchNewData = async () => {
     try {
       setLoading(true);
+
+      const storedPokemon = await fetchPokemonFromStorage();
+      const manuallyCreatedPokemon = storedPokemon.filter(pokemon => pokemon.id > 1000); // Keep custom Pokémon
+
       await clearPokemonStorage(); // Clear existing data
-      await fetchAndStorePokemonData(); // Fetch new data and store it
-      const storedPokemon = await fetchPokemonFromStorage(); // Fetch the newly stored data
-      const updatedPokemon = storedPokemon.map(pokemon => ({
+      const newFetchedPokemon = await fetchAndStorePokemonData(); // Fetch new Pokémon data
+
+      const mergedPokemonData = [...newFetchedPokemon, ...manuallyCreatedPokemon]; // Merge custom and fetched Pokémon
+      await AsyncStorage.setItem('pokemon_data', JSON.stringify(mergedPokemonData)); // Save merged data
+
+      const updatedPokemon = mergedPokemonData.map(pokemon => ({
         ...pokemon,
         isFavorite: favorites.some(fav => fav.id === pokemon.id),
       }));
@@ -114,7 +121,7 @@ export default function Index() {
 
     try {
       const newPokemon = {
-        id: pokemonData.length + 1, // Create a new ID (incremental)
+        id: pokemonData.length + 1001, // New ID for custom Pokémon
         name: { english: newPokemonName },
         type: [newPokemonType],
         image: {
@@ -122,12 +129,10 @@ export default function Index() {
         },
       };
 
-      // Update AsyncStorage with the new Pokémon
-      const updatedPokemonData = [...pokemonData, newPokemon];
+      const updatedPokemonData = [...pokemonData, newPokemon]; // Add new Pokémon to the list
       await AsyncStorage.setItem('pokemon_data', JSON.stringify(updatedPokemonData));
       setPokemonData(updatedPokemonData);
 
-      // Reset the inputs and hide the modal
       setNewPokemonName('');
       setNewPokemonType('');
       setCreateModalVisible(false);
@@ -136,13 +141,16 @@ export default function Index() {
     }
   };
 
+  const handleNavigateToDetails = (pokemonId) => {
+    router.push(`/profile/${pokemonId}`); // Navigate to the profile screen with the Pokémon ID
+  };
+
   return (
     <View style={[styles.container, isDarkMode && styles.darkContainer]}>
       {loading ? (
         <ActivityIndicator size="large" color={isDarkMode ? '#fff' : '#000'} />
       ) : (
         <>
- 
           <TouchableOpacity style={styles.modalButton} onPress={() => setCreateModalVisible(true)}>
             <Text style={styles.createText}>Create Pokémon</Text>
           </TouchableOpacity>
@@ -154,7 +162,7 @@ export default function Index() {
               <View style={[styles.cardContainer, isDarkMode && styles.darkCardContainer]}>
                 <TouchableOpacity
                   style={styles.cardContent}
-                  onPress={() => handleNavigateToDetails(item.id)}
+                  onPress={() => handleNavigateToDetails(item.id)} // Navigate to Pokémon details
                 >
                   <Image source={{ uri: item.image.hires }} style={styles.image} />
                   <View style={styles.textContainer}>
@@ -162,41 +170,16 @@ export default function Index() {
                       {item.name.english || 'Unknown'} #{item.id}
                     </Text>
                     <View style={styles.iconContainer}>
-                      <TouchableOpacity
-                        onPress={() => handleToggleFavorite(item)}
-                        style={styles.favoriteButton}
-                      >
-                        <Icon
-                          name={item.isFavorite ? 'heart' : 'heart-outline'}
-                          size={24}
-                          color={item.isFavorite ? 'red' : isDarkMode ? '#fff' : '#000'}
-                        />
+                      <TouchableOpacity onPress={() => handleToggleFavorite(item)} style={styles.favoriteButton}>
+                        <Icon name={item.isFavorite ? 'heart' : 'heart-outline'} size={24} color={item.isFavorite ? 'red' : isDarkMode ? '#fff' : '#000'} />
                       </TouchableOpacity>
 
-                      <TouchableOpacity
-                        onPress={() => handleDeletePokemon(item.id)}
-                        style={styles.deleteButton}
-                      >
-                        <Icon
-                          name="delete-outline"
-                          size={24}
-                          color={isDarkMode ? '#fff' : '#000'}
-                        />
+                      <TouchableOpacity onPress={() => handleDeletePokemon(item.id)} style={styles.deleteButton}>
+                        <Icon name="delete-outline" size={24} color={isDarkMode ? '#fff' : '#000'} />
                       </TouchableOpacity>
 
-                      <TouchableOpacity
-                        onPress={() => {
-                          setEditingPokemon(item);
-                          setEditName(item.name.english);
-                          setModalVisible(true);
-                        }}
-                        style={styles.editButton}
-                      >
-                        <Icon
-                          name="pencil-outline"
-                          size={24}
-                          color={isDarkMode ? '#fff' : '#000'}
-                        />
+                      <TouchableOpacity onPress={() => { setEditingPokemon(item); setEditName(item.name.english); setModalVisible(true); }} style={styles.editButton}>
+                        <Icon name="pencil-outline" size={24} color={isDarkMode ? '#fff' : '#000'} />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -205,51 +188,25 @@ export default function Index() {
             )}
           />
 
-        
-          <Modal
-            visible={isModalVisible}
-            transparent={true}
-            animationType="slide"
-            onRequestClose={() => setModalVisible(false)}
-          >
+          <Modal visible={isCreateModalVisible} transparent={true} animationType="slide" onRequestClose={() => setCreateModalVisible(false)}>
             <View style={styles.modalContainer}>
               <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Edit Pokémon Name</Text>
-                <TextInput
-                  style={styles.textInput}
-                  value={editName}
-                  onChangeText={setEditName}
-                  placeholder="Enter new name"
-                />
-                <Button title="Save Changes" onPress={handleEditPokemon} />
-                <Button title="Cancel" onPress={() => setModalVisible(false)} />
+                <Text style={styles.modalTitle}>Create New Pokémon</Text>
+                <TextInput style={styles.textInput} value={newPokemonName} onChangeText={setNewPokemonName} placeholder="Enter Pokémon Name" />
+                <TextInput style={styles.textInput} value={newPokemonType} onChangeText={setNewPokemonType} placeholder="Enter Pokémon Type" />
+                <Button title="Create" onPress={handleCreatePokemon} />
+                <Button title="Cancel" onPress={() => setCreateModalVisible(false)} />
               </View>
             </View>
           </Modal>
 
-          <Modal
-            visible={isCreateModalVisible}
-            transparent={true}
-            animationType="slide"
-            onRequestClose={() => setCreateModalVisible(false)}
-          >
+          <Modal visible={isModalVisible} transparent={true} animationType="slide" onRequestClose={() => setModalVisible(false)}>
             <View style={styles.modalContainer}>
               <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Create New Pokémon</Text>
-                <TextInput
-                  style={styles.textInput}
-                  value={newPokemonName}
-                  onChangeText={setNewPokemonName}
-                  placeholder="Enter Pokémon name"
-                />
-                <TextInput
-                  style={styles.textInput}
-                  value={newPokemonType}
-                  onChangeText={setNewPokemonType}
-                  placeholder="Enter Pokémon type"
-                />
-                <Button title="Create" onPress={handleCreatePokemon} />
-                <Button title="Cancel" onPress={() => setCreateModalVisible(false)} />
+                <Text style={styles.modalTitle}>Edit Pokémon Name</Text>
+                <TextInput style={styles.textInput} value={editName} onChangeText={setEditName} placeholder="Enter new name" />
+                <Button title="Save Changes" onPress={handleEditPokemon} />
+                <Button title="Cancel" onPress={() => setModalVisible(false)} />
               </View>
             </View>
           </Modal>
@@ -258,6 +215,7 @@ export default function Index() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

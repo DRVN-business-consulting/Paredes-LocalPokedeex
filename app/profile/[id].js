@@ -1,8 +1,7 @@
-// app/profile/[id].js
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ActivityIndicator, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useRoute } from '@react-navigation/native';
 
@@ -47,25 +46,26 @@ export default function ProfileScreen() {
       return;
     }
 
-    const fetchPokemonDetails = async () => {
+    const fetchPokemonDetailsFromStorage = async () => {
       try {
-        const response = await axios.get(`http://192.168.0.141:8000/pokemon/${id}`);
-        
+        const storedPokemon = await AsyncStorage.getItem('pokemon_data');
+        const parsedPokemon = storedPokemon ? JSON.parse(storedPokemon) : [];
+        const pokemonDetails = parsedPokemon.find(pokemon => pokemon.id === parseInt(id, 10));
 
-        if (Array.isArray(response.data) && response.data.length > 0) {
-          setPokemon(response.data[0]);
+        if (pokemonDetails) {
+          setPokemon(pokemonDetails);
         } else {
           setError('Pokémon not found');
         }
       } catch (err) {
-        console.error('Error fetching Pokémon details:', err);
-        setError('Failed to load Pokémon details');
+        console.error('Error fetching Pokémon from storage:', err);
+        setError('Failed to load Pokémon details from storage');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPokemonDetails();
+    fetchPokemonDetailsFromStorage();
   }, [id]);
 
   const calculateGradient = (color1, color2) => {
@@ -161,107 +161,88 @@ export default function ProfileScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 20,
   },
   darkContainer: {
     backgroundColor: '#333',
   },
   card: {
     borderRadius: 10,
-    padding: 16,
-    margin: 16,
-    maxWidth: 700,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 5,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    padding: 20,
+    marginBottom: 20,
   },
   darkCard: {
-    shadowColor: '#222',
+    backgroundColor: '#444',
   },
   headerContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: 16,
   },
   pokemonId: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: 'black',
-    marginBottom: 4,
   },
   darkPokemonId: {
-    color: 'white',
+    color: '#fff',
   },
   image: {
     width: 150,
     height: 150,
-    marginBottom: 8,
+    alignSelf: 'center',
+    marginVertical: 10,
   },
   name: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 8,
+    textAlign: 'center',
+    marginVertical: 10,
   },
   darkName: {
     color: '#fff',
   },
-  gradientButton: {
-    borderRadius: 5,
-    marginVertical: 8,
-  },
-  button: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  toggleButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
   description: {
     fontSize: 16,
-    marginBottom: 8,
+    textAlign: 'center',
+    marginVertical: 10,
   },
   darkDescription: {
-    color: '#ddd',
+    color: '#fff',
   },
   text: {
     fontSize: 16,
+    textAlign: 'center',
   },
   darkText: {
-    color: '#ccc',
+    color: '#fff',
   },
   bold: {
     fontWeight: 'bold',
   },
   statsContainer: {
-    marginVertical: 8,
+    marginTop: 10,
+  },
+  gradientButton: {
+    marginVertical: 10,
+    borderRadius: 10,
+  },
+  button: {
+    padding: 10,
+    alignItems: 'center',
+  },
+  toggleButtonText: {
+    fontSize: 16,
+    color: '#fff',
   },
   error: {
-    fontSize: 18,
     color: 'red',
     textAlign: 'center',
   },
   darkError: {
-    color: '#f08080',
+    color: '#ffcccc',
   },
   loader: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
   },
 });
