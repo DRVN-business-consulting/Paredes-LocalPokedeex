@@ -1,10 +1,8 @@
-// utils/storageUtils.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 const API_URL = 'http://192.168.0.141:8000/pokemon';
 
-// Fetch new Pokémon data from the API and replace existing data in AsyncStorage
 const fetchAndStorePokemonData = async () => {
   try {
     // Fetch new data from the API
@@ -12,11 +10,7 @@ const fetchAndStorePokemonData = async () => {
     const newPokemonData = response.data;
     console.log('New Pokémon Data:', newPokemonData);
 
-    // Clear existing data from AsyncStorage
-    await AsyncStorage.removeItem('pokemon_data');
-    console.log('Existing Pokémon Data Cleared from Storage');
-
-    // Store the new data in AsyncStorage
+    // Store new data
     await AsyncStorage.setItem('pokemon_data', JSON.stringify(newPokemonData));
     console.log('New Pokémon Data Stored Successfully');
 
@@ -27,14 +21,23 @@ const fetchAndStorePokemonData = async () => {
   }
 };
 
-// Fetch existing Pokémon data from AsyncStorage
 const fetchPokemonFromStorage = async () => {
   try {
     const storedPokemon = await AsyncStorage.getItem('pokemon_data');
-    console.log('Fetched Pokémon Data from Storage:', storedPokemon);
     return storedPokemon ? JSON.parse(storedPokemon) : [];
   } catch (error) {
     console.error('Error fetching Pokémon data from storage:', error);
+    throw error;
+  }
+};
+
+// Add this function to clear all Pokémon data from AsyncStorage
+const clearPokemonStorage = async () => {
+  try {
+    await AsyncStorage.removeItem('pokemon_data');
+    console.log('All Pokémon Data Cleared from Storage');
+  } catch (error) {
+    console.error('Error clearing Pokémon data from storage:', error);
     throw error;
   }
 };
@@ -58,4 +61,4 @@ const deletePokemonFromStorage = async (pokemonId) => {
   }
 };
 
-export { fetchPokemonFromStorage, fetchAndStorePokemonData, deletePokemonFromStorage };
+export { fetchPokemonFromStorage, fetchAndStorePokemonData, deletePokemonFromStorage, clearPokemonStorage };

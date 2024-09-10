@@ -1,9 +1,9 @@
 // app/(tabs)/index.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOpacity, Button } from 'react-native';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useFavorites } from '../../src/theme/FavoritesContext';
-import { fetchPokemonFromStorage, deletePokemonFromStorage } from '../utils/storageUtils';
+import { fetchPokemonFromStorage, deletePokemonFromStorage, clearPokemonStorage, fetchAndStorePokemonData } from '../utils/storageUtils';
 import { useRouter } from 'expo-router';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -19,7 +19,6 @@ export default function Index() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch updated Pokémon data from AsyncStorage
         const storedPokemon = await fetchPokemonFromStorage();
         const updatedPokemon = storedPokemon.map(pokemon => ({
           ...pokemon,
@@ -36,6 +35,25 @@ export default function Index() {
 
     fetchData();
   }, [favorites]);
+
+  const handleFetchNewData = async () => {
+    try {
+      setLoading(true);
+      await clearPokemonStorage(); // Clear existing data
+      await fetchAndStorePokemonData(); // Fetch new data and store it
+      const storedPokemon = await fetchPokemonFromStorage(); // Fetch the newly stored data
+      const updatedPokemon = storedPokemon.map(pokemon => ({
+        ...pokemon,
+        isFavorite: favorites.some(fav => fav.id === pokemon.id),
+      }));
+      setPokemonData(updatedPokemon);
+    } catch (err) {
+      console.error('Failed to fetch and store new Pokémon data:', err);
+      setError('Failed to fetch and store new Pokémon data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleNavigateToDetails = (pokemonId) => {
     router.push(`/profile/${pokemonId}`);
@@ -74,52 +92,56 @@ export default function Index() {
       {loading ? (
         <ActivityIndicator size="large" color={isDarkMode ? '#fff' : '#000'} />
       ) : (
-        <FlatList
-          data={pokemonData}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <View style={[styles.cardContainer, isDarkMode && styles.darkCardContainer]}>
-              <TouchableOpacity
-                style={styles.cardContent}
-                onPress={() => handleNavigateToDetails(item.id)}
-              >
-                <Image source={{ uri: item.image.hires }} style={styles.image} />
-                <View style={styles.textContainer}>
-                  <Text style={[styles.pokemonName, isDarkMode && styles.darkPokemonName]}>
-                    {item.name.english || 'Unknown'} #{item.id}
-                  </Text>
-                  <View style={styles.iconContainer}>
-                    <TouchableOpacity
-                      onPress={() => handleToggleFavorite(item)}
-                      style={styles.favoriteButton}
-                    >
-                      <Icon
-                        name={item.isFavorite ? 'heart' : 'heart-outline'}
-                        size={24}
-                        color={item.isFavorite ? 'red' : isDarkMode ? '#fff' : '#000'}
-                      />
-                    </TouchableOpacity>
+        <>
+          <Button title="Fetch New Data" onPress={handleFetchNewData} />
+          <FlatList
+            data={pokemonData}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <View style={[styles.cardContainer, isDarkMode && styles.darkCardContainer]}>
+                <TouchableOpacity
+                  style={styles.cardContent}
+                  onPress={() => handleNavigateToDetails(item.id)}
+                >
+                  <Image source={{ uri: item.image.hires }} style={styles.image} />
+                  <View style={styles.textContainer}>
+                    <Text style={[styles.pokemonName, isDarkMode && styles.darkPokemonName]}>
+                      {item.name.english || 'Unknown'} #{item.id}
+                    </Text>
+                    <View style={styles.iconContainer}>
+                      <TouchableOpacity
+                        onPress={() => handleToggleFavorite(item)}
+                        style={styles.favoriteButton}
+                      >
+                        <Icon
+                          name={item.isFavorite ? 'heart' : 'heart-outline'}
+                          size={24}
+                          color={item.isFavorite ? 'red' : isDarkMode ? '#fff' : '#000'}
+                        />
+                      </TouchableOpacity>
 
-                    <TouchableOpacity
-                      onPress={() => handleDeletePokemon(item.id)}
-                      style={styles.deleteButton}
-                    >
-                      <Icon
-                        name="delete-outline"
-                        size={24}
-                        color={isDarkMode ? '#fff' : '#000'}
-                      />
-                    </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleDeletePokemon(item.id)}
+                        style={styles.deleteButton}
+                      >
+                        <Icon
+                          name="delete-outline"
+                          size={24}
+                          color={isDarkMode ? '#fff' : '#000'}
+                        />
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            </View>
-          )}
-        />
+                </TouchableOpacity>
+              </View>
+            )}
+          />
+        </>
       )}
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

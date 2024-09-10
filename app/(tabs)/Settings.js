@@ -1,17 +1,18 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, Text, Switch, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, Switch, TouchableOpacity, Alert } from 'react-native';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useAuth } from '../../src/theme/AuthContext';
 
 export default function Settings() {
   const { theme, toggleTheme } = useTheme();
-  const { logout } = useAuth(); // Use logout from AuthContext
+  const { logout } = useAuth(); 
   const isDarkMode = theme === 'dark';
 
   const handleLogout = async () => {
-    logout(); // call to the Login.js 
+    logout(); 
   };
+
 
   return (
     <View style={[styles.container, isDarkMode && styles.darkContainer]}>
@@ -25,6 +26,7 @@ export default function Settings() {
           thumbColor={isDarkMode ? '#fff' : '#f4f3f4'}
         />
       </View>
+
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
@@ -54,6 +56,16 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 18,
     marginBottom: 10,
+  },
+  refreshButton: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: '#4caf50',
+    borderRadius: 5,
+  },
+  refreshText: {
+    color: '#fff',
+    fontSize: 16,
   },
   logoutButton: {
     marginTop: 20,
