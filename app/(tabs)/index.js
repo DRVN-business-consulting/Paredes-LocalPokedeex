@@ -57,13 +57,11 @@ export default function Index() {
 
   const handleDeletePokemon = async (pokemonId) => {
     try {
-      // Remove from AsyncStorage
+
       await deletePokemonFromStorage(pokemonId);
 
-      // Update the state to remove the Pokémon from the list
       setPokemonData(prevData => prevData.filter(pokemon => pokemon.id !== pokemonId));
 
-      // Optionally, update the favorites context as well if this Pokémon is a favorite
       await removeFavorite(pokemonId);
     } catch (err) {
       console.error('Failed to delete Pokémon from storage:', err);

@@ -1,21 +1,16 @@
-// app/(tabs)/groupList.js
-
-
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, Text, Switch, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../src/theme/ThemeContext';
-import { useRouter } from 'expo-router';
-import * as Updates from 'expo-updates';
+import { useAuth } from '../../src/theme/AuthContext';
 
 export default function Settings() {
   const { theme, toggleTheme } = useTheme();
+  const { logout } = useAuth(); // Use logout from AuthContext
   const isDarkMode = theme === 'dark';
-  const router = useRouter();
 
   const handleLogout = async () => {
-    await Updates.reloadAsync(); // Reloads the app as the on.back gives me a hard time with the samefile names
-    //router.replace('/'); doesn't work on my hierarchy 
+    logout(); // call to the Login.js 
   };
 
   return (

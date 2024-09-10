@@ -2,9 +2,11 @@ import React from 'react';
 import { Stack } from 'expo-router';
 import { ThemeProvider } from '../src/theme/ThemeContext';
 import { FavoritesProvider } from '../src/theme/FavoritesContext';
+import { AuthProvider } from '../src/theme/AuthContext';
 
 export default function AppLayout() {
   return (
+    <AuthProvider>
     <ThemeProvider>
       <FavoritesProvider>
         <Stack>
@@ -13,11 +15,11 @@ export default function AppLayout() {
             name="index"
             options={{
               title: 'Home',
-              headerShown: false, // Hides the header for this screen
+              headerShown: false, 
               headerStyle: {
-                backgroundColor: 'pink', // Customize header background color
+                backgroundColor: 'pink', 
               },
-              headerTintColor: 'Black', // Customize header text color
+              headerTintColor: 'Black', 
             }}
           />
           {/* Tabs Screen */}
@@ -25,15 +27,28 @@ export default function AppLayout() {
             name="(tabs)"
             options={{
               title: 'My Tabs',
-              headerShown: false, // Hides the header for this screen
+              headerShown: false, 
               headerStyle: {
-                backgroundColor: 'green', // Customize header background color
+                backgroundColor: 'green', 
               },
-              headerTintColor: 'yellow', // Customize header text color
+              headerTintColor: 'yellow',
+            }}
+          />
+
+<Stack.Screen
+            name="login"
+            options={{
+              title: 'login',
+              headerShown: false,
+              headerStyle: {
+                backgroundColor: 'green',
+              },
+              headerTintColor: 'yellow',
             }}
           />
         </Stack>
       </FavoritesProvider>
     </ThemeProvider>
+    </AuthProvider>
   );
 }

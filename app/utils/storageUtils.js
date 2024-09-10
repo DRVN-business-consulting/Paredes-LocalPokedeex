@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const API_URL = 'http://192.168.0.141:8000/pokemon';
 
-// Fetch Pokémon data from AsyncStorage only
+
 const fetchPokemonFromStorage = async () => {
   try {
     const storedPokemon = await AsyncStorage.getItem('pokemon_data');
@@ -14,13 +14,12 @@ const fetchPokemonFromStorage = async () => {
   }
 };
 
-// Fetch Pokémon data from API and store it in AsyncStorage
+
 const fetchAndStorePokemonData = async () => {
   try {
     const response = await axios.get(`${API_URL}?limit=50`);
     const pokemonData = response.data;
 
-    // Store the data in AsyncStorage
     await AsyncStorage.setItem('pokemon_data', JSON.stringify(pokemonData));
 
     return pokemonData;
@@ -30,13 +29,12 @@ const fetchAndStorePokemonData = async () => {
   }
 };
 
-// Delete Pokémon from AsyncStorage
 const deletePokemonFromStorage = async (pokemonId) => {
   try {
     const storedPokemon = await fetchPokemonFromStorage();
     const updatedData = storedPokemon.filter(pokemon => pokemon.id !== pokemonId);
 
-    // Update AsyncStorage with the new data
+
     await AsyncStorage.setItem('pokemon_data', JSON.stringify(updatedData));
   } catch (error) {
     console.error('Error deleting Pokémon from storage:', error);
