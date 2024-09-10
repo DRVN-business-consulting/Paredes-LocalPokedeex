@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FAVORITES_KEY = 'favorites';
-const API_URL = 'http://192.168.100.6:8000/pokemon';
+const API_URL = 'http://192.168.0.141:8000/pokemon';
 
 export const getFavorites = async () => {
   try {

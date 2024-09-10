@@ -15,7 +15,7 @@ export default function Settings() {
 
   const handleLogout = async () => {
     await Updates.reloadAsync(); // Reloads the app as the on.back gives me a hard time with the samefile names
-    router.replace('/'); 
+    //router.replace('/'); doesn't work on my hierarchy 
   };
 
   return (

@@ -3,15 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../src/theme/ThemeContext';
-import { useFavorites } from '../../src/theme/FavoritesContext'; 
+import { useFavorites } from '../../src/theme/FavoritesContext';
+import { fetchPokemonFromStorage } from '../utils/storageUtils';
 import { useRouter } from 'expo-router';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { fetchPokemonFromStorage } from '../utils/storageUtils'; 
 
 export default function GroupList() {
   const router = useRouter();
   const { theme } = useTheme();
-  const { favorites, addFavorite, removeFavorite } = useFavorites(); 
+  const { favorites, addFavorite, removeFavorite } = useFavorites();
   const isDarkMode = theme === 'dark';
   const [pokemonData, setPokemonData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -20,15 +20,12 @@ export default function GroupList() {
   useEffect(() => {
     const loadPokemonData = async () => {
       try {
-        const storedPokemon = await fetchPokemonFromStorage(); 
-
-        
+        const storedPokemon = await fetchPokemonFromStorage();
         const markedPokemon = storedPokemon.map(pokemon => ({
           ...pokemon,
           isFavorite: favorites.some(fav => fav.id === pokemon.id),
         }));
 
-        
         const allTypes = [...new Set(markedPokemon.map(pokemon => pokemon.type[0]))];
         const groupedByType = allTypes.reduce((acc, type) => {
           acc[type] = markedPokemon.filter(pokemon => pokemon.type[0] === type);
@@ -45,7 +42,7 @@ export default function GroupList() {
     };
 
     loadPokemonData();
-  }, [favorites]); 
+  }, [favorites]); // Dependency on favorites to re-fetch when favorites change
 
   const handleNavigateToDetails = (pokemonId) => {
     router.push(`/profile/${pokemonId}`);
@@ -57,6 +54,7 @@ export default function GroupList() {
     } else {
       await addFavorite(pokemon);
     }
+
     setPokemonData((prevData) => {
       const updatedData = { ...prevData };
       Object.keys(updatedData).forEach((type) => {
@@ -93,20 +91,22 @@ export default function GroupList() {
                     style={[styles.item, isDarkMode && styles.darkItem]}
                     onPress={() => handleNavigateToDetails(item.id)}
                   >
-                    <Image source={{  uri: item.image.hires  }} style={styles.image} />
-                    <View style={styles.infoContainer}>
-                      <Text style={[styles.pokemonName, isDarkMode && styles.darkPokemonName]}>{item.name.english} #{item.id}</Text>
+                    <Image source={{ uri: item.image.hires }} style={styles.image} />
+                    <View style={styles.textContainer}>
+                      <Text style={[styles.pokemonName, isDarkMode && styles.darkPokemonName]}>
+                        {item.name.english || 'Unknown'} #{item.id}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => handleToggleFavorite(item)}
+                        style={styles.favoriteButton}
+                      >
+                        <Icon
+                          name={item.isFavorite ? 'heart' : 'heart-outline'}
+                          size={24}
+                          color={item.isFavorite ? 'red' : isDarkMode ? '#fff' : '#000'}
+                        />
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity
-                      style={styles.favoriteButton}
-                      onPress={() => handleToggleFavorite(item)}
-                    >
-                      <Icon
-                        name={item.isFavorite ? 'heart' : 'heart-outline'}
-                        size={24}
-                        color={item.isFavorite ? 'red' : isDarkMode ? '#fff' : '#000'}
-                      />
-                    </TouchableOpacity>
                   </TouchableOpacity>
                 </View>
               )}

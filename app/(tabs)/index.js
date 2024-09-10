@@ -3,16 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../src/theme/ThemeContext';
-import { useFavorites } from '../../src/theme/FavoritesContext'; 
-import { fetchPokemonFromStorage } from '../utils/storageUtils'; 
+import { useFavorites } from '../../src/theme/FavoritesContext';
+import { fetchPokemonFromStorage, deletePokemonFromStorage } from '../utils/storageUtils';
 import { useRouter } from 'expo-router';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 export default function Index() {
   const router = useRouter();
   const { theme } = useTheme();
-  const { favorites, addFavorite, removeFavorite } = useFavorites(); 
+  const { favorites, addFavorite, removeFavorite } = useFavorites();
   const isDarkMode = theme === 'dark';
   const [pokemonData, setPokemonData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +25,6 @@ export default function Index() {
           ...pokemon,
           isFavorite: favorites.some(fav => fav.id === pokemon.id),
         }));
-        updatedPokemon.sort((a, b) => a.id - b.id); // Sort Pokémon by ID
         setPokemonData(updatedPokemon);
       } catch (err) {
         console.error('Failed to load Pokémon data from storage:', err);
@@ -50,8 +48,8 @@ export default function Index() {
       await addFavorite(pokemon);
     }
 
-    setPokemonData((prevData) =>
-      prevData.map((p) =>
+    setPokemonData(prevData =>
+      prevData.map(p =>
         p.id === pokemon.id ? { ...p, isFavorite: !p.isFavorite } : p
       )
     );
@@ -59,69 +57,71 @@ export default function Index() {
 
   const handleDeletePokemon = async (pokemonId) => {
     try {
-      await AsyncStorage.removeItem(`pokemon_${pokemonId}`);
-      setPokemonData((prevData) => prevData.filter(pokemon => pokemon.id !== pokemonId));
+      // Remove from AsyncStorage
+      await deletePokemonFromStorage(pokemonId);
+
+      // Update the state to remove the Pokémon from the list
+      setPokemonData(prevData => prevData.filter(pokemon => pokemon.id !== pokemonId));
+
+      // Optionally, update the favorites context as well if this Pokémon is a favorite
+      await removeFavorite(pokemonId);
     } catch (err) {
       console.error('Failed to delete Pokémon from storage:', err);
     }
   };
 
-  if (loading) {
-    return <ActivityIndicator size="large" color={isDarkMode ? '#fff' : '#000'} style={styles.loader} />;
-  }
-
-  if (error) {
-    return <Text style={[styles.error, isDarkMode && styles.darkError]}>{error}</Text>;
-  }
-
   return (
     <View style={[styles.container, isDarkMode && styles.darkContainer]}>
-      <FlatList
-        data={pokemonData}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View style={[styles.cardContainer, isDarkMode && styles.darkCardContainer]}>
-            <TouchableOpacity
-              style={styles.cardContent}
-              onPress={() => handleNavigateToDetails(item.id)}
-            >
-              <Image source={{ uri: item.image.hires }} style={styles.image} />
-              <View style={styles.textContainer}>
-                <Text style={[styles.pokemonName, isDarkMode && styles.darkPokemonName]}>
-                  {item.name.english || 'Unknown'} # {item.id} 
-                </Text>
-                <View style={styles.iconContainer}>
-                  <TouchableOpacity
-                    onPress={() => handleToggleFavorite(item)}
-                    style={styles.favoriteButton}
-                  >
-                    <Icon
-                      name={item.isFavorite ? 'heart' : 'heart-outline'}
-                      size={24}
-                      color={item.isFavorite ? 'red' : isDarkMode ? '#fff' : '#000'}
-                    />
-                  </TouchableOpacity>
+      {loading ? (
+        <ActivityIndicator size="large" color={isDarkMode ? '#fff' : '#000'} />
+      ) : (
+        <FlatList
+          data={pokemonData}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <View style={[styles.cardContainer, isDarkMode && styles.darkCardContainer]}>
+              <TouchableOpacity
+                style={styles.cardContent}
+                onPress={() => handleNavigateToDetails(item.id)}
+              >
+                <Image source={{ uri: item.image.hires }} style={styles.image} />
+                <View style={styles.textContainer}>
+                  <Text style={[styles.pokemonName, isDarkMode && styles.darkPokemonName]}>
+                    {item.name.english || 'Unknown'} #{item.id}
+                  </Text>
+                  <View style={styles.iconContainer}>
+                    <TouchableOpacity
+                      onPress={() => handleToggleFavorite(item)}
+                      style={styles.favoriteButton}
+                    >
+                      <Icon
+                        name={item.isFavorite ? 'heart' : 'heart-outline'}
+                        size={24}
+                        color={item.isFavorite ? 'red' : isDarkMode ? '#fff' : '#000'}
+                      />
+                    </TouchableOpacity>
 
-                  {/* Delete Button */}
-                  <TouchableOpacity
-                    onPress={() => handleDeletePokemon(item.id)}
-                    style={styles.deleteButton}
-                  >
-                    <Icon
-                      name="delete-outline"
-                      size={24}
-                      color={isDarkMode ? '#fff' : '#000'}
-                    />
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleDeletePokemon(item.id)}
+                      style={styles.deleteButton}
+                    >
+                      <Icon
+                        name="delete-outline"
+                        size={24}
+                        color={isDarkMode ? '#fff' : '#000'}
+                      />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          </View>
-        )}
-      />
+              </TouchableOpacity>
+            </View>
+          )}
+        />
+      )}
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

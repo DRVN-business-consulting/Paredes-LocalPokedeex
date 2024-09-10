@@ -6,28 +6,30 @@ import { FavoritesProvider } from '../src/theme/FavoritesContext';
 export default function AppLayout() {
   return (
     <ThemeProvider>
-      <FavoritesProvider> 
+      <FavoritesProvider>
         <Stack>
+          {/* Home Screen */}
           <Stack.Screen
             name="index"
             options={{
               title: 'Home',
-              headerShown: false,
+              headerShown: false, // Hides the header for this screen
               headerStyle: {
-                backgroundColor: 'pink',
+                backgroundColor: 'pink', // Customize header background color
               },
-              headerTintColor: 'Black',
+              headerTintColor: 'Black', // Customize header text color
             }}
           />
+          {/* Tabs Screen */}
           <Stack.Screen
             name="(tabs)"
             options={{
               title: 'My Tabs',
-              headerShown: false,
+              headerShown: false, // Hides the header for this screen
               headerStyle: {
-                backgroundColor: 'green',
+                backgroundColor: 'green', // Customize header background color
               },
-              headerTintColor: 'yellow',
+              headerTintColor: 'yellow', // Customize header text color
             }}
           />
         </Stack>
