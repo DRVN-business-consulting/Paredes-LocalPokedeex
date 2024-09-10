@@ -1,8 +1,18 @@
-// app/utils/storageUtils.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 const API_URL = 'http://192.168.0.141:8000/pokemon';
+
+// Function to clear Pokémon data from AsyncStorage
+const clearPokemonStorage = async () => {
+  try {
+    await AsyncStorage.removeItem('pokemon_data');
+    console.log('Existing Pokémon data cleared from storage.');
+  } catch (error) {
+    console.error('Error clearing Pokémon data from storage:', error);
+    throw error;
+  }
+};
 
 // Function to fetch new data from the API and store it in AsyncStorage
 const fetchAndStorePokemonData = async () => {
@@ -10,8 +20,8 @@ const fetchAndStorePokemonData = async () => {
     const response = await axios.get(`${API_URL}?limit=50`);
     const newPokemonData = response.data;
 
-    await AsyncStorage.removeItem('pokemon_data');
     await AsyncStorage.setItem('pokemon_data', JSON.stringify(newPokemonData));
+    console.log('New Pokémon data fetched and stored successfully.');
 
     return newPokemonData;
   } catch (error) {
@@ -38,6 +48,7 @@ const deletePokemonFromStorage = async (pokemonId) => {
     const updatedData = storedPokemon.filter(pokemon => pokemon.id !== pokemonId);
 
     await AsyncStorage.setItem('pokemon_data', JSON.stringify(updatedData));
+    console.log(`Pokémon with ID ${pokemonId} deleted.`);
   } catch (error) {
     console.error('Error deleting Pokémon from storage:', error);
     throw error;
@@ -53,10 +64,11 @@ const updatePokemonInStorage = async (updatedPokemon) => {
     );
 
     await AsyncStorage.setItem('pokemon_data', JSON.stringify(updatedData));
+    console.log('Pokémon data updated successfully.');
   } catch (error) {
     console.error('Error updating Pokémon data in storage:', error);
     throw error;
   }
 };
 
-export { fetchPokemonFromStorage, fetchAndStorePokemonData, deletePokemonFromStorage, updatePokemonInStorage };
+export { fetchPokemonFromStorage, fetchAndStorePokemonData, deletePokemonFromStorage, updatePokemonInStorage, clearPokemonStorage };
