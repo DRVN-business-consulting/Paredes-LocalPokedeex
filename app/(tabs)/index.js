@@ -3,11 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOpacity, Modal, TextInput, Button } from 'react-native';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useFavorites } from '../../src/theme/FavoritesContext';
-import { fetchPokemonFromStorage, deletePokemonFromStorage, clearPokemonStorage, fetchAndStorePokemonData } from '../utils/storageUtils';
+import { fetchPokemonFromStorage, deletePokemonFromStorage, clearPokemonStorage, fetchAndStorePokemonData, updatePokemonInStorage } from '../utils/storageUtils';
 import { useRouter } from 'expo-router';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 
 export default function Index() {
   const router = useRouter();
@@ -20,6 +19,9 @@ export default function Index() {
   const [editingPokemon, setEditingPokemon] = useState(null);
   const [editName, setEditName] = useState('');
   const [isModalVisible, setModalVisible] = useState(false);
+  const [isCreateModalVisible, setCreateModalVisible] = useState(false);
+  const [newPokemonName, setNewPokemonName] = useState('');
+  const [newPokemonType, setNewPokemonType] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,10 +62,6 @@ export default function Index() {
     }
   };
 
-  const handleNavigateToDetails = (pokemonId) => {
-    router.push(`/profile/${pokemonId}`);
-  };
-
   const handleToggleFavorite = async (pokemon) => {
     try {
       if (pokemon.isFavorite) {
@@ -96,22 +94,45 @@ export default function Index() {
     if (!editingPokemon || !editName.trim()) return;
 
     try {
-      const updatedPokemonData = pokemonData.map(pokemon =>
-        pokemon.id === editingPokemon.id
-          ? { ...pokemon, name: { ...pokemon.name, english: editName } }
-          : pokemon
+      const updatedPokemon = { ...editingPokemon, name: { ...editingPokemon.name, english: editName } };
+      await updatePokemonInStorage(updatedPokemon);
+      setPokemonData(prevData =>
+        prevData.map(pokemon =>
+          pokemon.id === updatedPokemon.id ? updatedPokemon : pokemon
+        )
       );
-      
-      // Update in AsyncStorage
-      await AsyncStorage.setItem('pokemon_data', JSON.stringify(updatedPokemonData));
-      setPokemonData(updatedPokemonData);
-
-      // Hide the modal
       setModalVisible(false);
       setEditingPokemon(null);
       setEditName('');
     } catch (err) {
       console.error('Failed to edit Pokémon name:', err);
+    }
+  };
+
+  const handleCreatePokemon = async () => {
+    if (!newPokemonName.trim() || !newPokemonType.trim()) return;
+
+    try {
+      const newPokemon = {
+        id: pokemonData.length + 1, // Create a new ID (incremental)
+        name: { english: newPokemonName },
+        type: [newPokemonType],
+        image: {
+          hires: 'https://via.placeholder.com/80',
+        },
+      };
+
+      // Update AsyncStorage with the new Pokémon
+      const updatedPokemonData = [...pokemonData, newPokemon];
+      await AsyncStorage.setItem('pokemon_data', JSON.stringify(updatedPokemonData));
+      setPokemonData(updatedPokemonData);
+
+      // Reset the inputs and hide the modal
+      setNewPokemonName('');
+      setNewPokemonType('');
+      setCreateModalVisible(false);
+    } catch (err) {
+      console.error('Failed to create new Pokémon:', err);
     }
   };
 
@@ -121,6 +142,10 @@ export default function Index() {
         <ActivityIndicator size="large" color={isDarkMode ? '#fff' : '#000'} />
       ) : (
         <>
+ 
+          <TouchableOpacity style={styles.modalButton} onPress={() => setCreateModalVisible(true)}>
+            <Text style={styles.createText}>Create Pokémon</Text>
+          </TouchableOpacity>
           <Button title="Fetch New Data" onPress={handleFetchNewData} />
           <FlatList
             data={pokemonData}
@@ -180,6 +205,7 @@ export default function Index() {
             )}
           />
 
+        
           <Modal
             visible={isModalVisible}
             transparent={true}
@@ -197,6 +223,33 @@ export default function Index() {
                 />
                 <Button title="Save Changes" onPress={handleEditPokemon} />
                 <Button title="Cancel" onPress={() => setModalVisible(false)} />
+              </View>
+            </View>
+          </Modal>
+
+          <Modal
+            visible={isCreateModalVisible}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setCreateModalVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Create New Pokémon</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={newPokemonName}
+                  onChangeText={setNewPokemonName}
+                  placeholder="Enter Pokémon name"
+                />
+                <TextInput
+                  style={styles.textInput}
+                  value={newPokemonType}
+                  onChangeText={setNewPokemonType}
+                  placeholder="Enter Pokémon type"
+                />
+                <Button title="Create" onPress={handleCreatePokemon} />
+                <Button title="Cancel" onPress={() => setCreateModalVisible(false)} />
               </View>
             </View>
           </Modal>
